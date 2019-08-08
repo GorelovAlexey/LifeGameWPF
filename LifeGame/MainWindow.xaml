@@ -1,0 +1,108 @@
+﻿<Window x:Class="LifeGame.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:LifeGame"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid Name="GridMain" SizeChanged="Grid_SizeChanged" Margin="0,0,0,5">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="5"/>
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="5"/>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="120"/>
+        </Grid.ColumnDefinitions>
+
+
+        <Image Name="GameField" Grid.Column="1" Grid.Row="1" 
+               MouseDown="GameField_MouseDown" MouseMove="GameField_MouseMove" MouseLeave="GameField_MouseLeave" MouseUp="GameField_MouseUp" MouseWheel="GameField_MouseWheel" />
+        <Canvas Name="DragMarkerCanvas" Grid.Column="1" Grid.Row="1" IsHitTestVisible="False" Panel.ZIndex="100">
+            <Canvas Name="DragMarkerIcon"  IsHitTestVisible="False" Canvas.Left="100" Canvas.Top="100" Opacity="0" Width="20" Height="20" >
+                <Ellipse  Fill="White"  Width="20" Height="20"
+                     StrokeThickness="3" Opacity="0.7" Stroke="White" 
+                     SnapsToDevicePixels="True" IsHitTestVisible="False"/>
+                <Polygon Fill="#FF151515" Opacity="0.4" Points="5,5 5,15 0,10"/>
+                <Polygon Fill="#FF151515" Opacity="0.4" Points="15,5 15,15 20,10"/>
+                <Polygon Fill="#FF151515" Opacity="0.4" Points="5,5 15,5 10,0"/>
+                <Polygon Fill="#FF151515" Opacity="0.4" Points="5,15 15,15 10,20"/>
+
+            </Canvas>
+        </Canvas>
+        <StackPanel Grid.ColumnSpan="2" Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Background="Black" />
+        <StackPanel Grid.Column="2" Grid.Row="1" Margin="10,0,0,0">
+            <Grid>
+
+            </Grid>
+
+            <Label Content="Screen position" HorizontalAlignment="Center"></Label>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Label Content="X" Margin="5,0" HorizontalAlignment="Center"/>
+                <Label Content="Y" Grid.Row="1" HorizontalAlignment="Center"/>
+                <TextBlock Name="CellXPosition" Grid.Column="1"/>
+                <TextBlock Name="CellYPosition" Grid.Column="1" Grid.Row="1"/>
+            </Grid>
+            <Grid Margin="0,10">
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <RepeatButton Grid.Row="1"  Name="Left" Content="&lt;" Click="Left_Click" Interval="25"></RepeatButton>
+                <RepeatButton Grid.Column="1" Name="Up" Content="^" Click="Up_Click" Interval="25"></RepeatButton>
+                <RepeatButton Grid.Row="1" Grid.Column="2" Name="Right" Content="&gt;" Click="Right_Click" Interval="25"></RepeatButton>
+                <RepeatButton Name="Down" Content="V" Grid.Column="1" Grid.Row="3" Click="Down_Click" Interval="25" ></RepeatButton>
+            </Grid>
+            <Label Content="Pixel scale" HorizontalAlignment="Center"/>
+            <DockPanel>
+                <RepeatButton Name="IncZoom" Content="+" Click="IncZoom_Click" DockPanel.Dock="Right" Width="20"></RepeatButton>
+                <RepeatButton Name ="DecZoom"  Content="-" Click="DecZoom_Click" Width="20" ></RepeatButton>
+                <TextBox Name="ZoomValue" TextAlignment="Center" LostFocus="ZoomValue_LostFocus" KeyDown="ZoomValue_KeyDown"/>
+            </DockPanel>
+            <Label Content="Delay cycles (ms)" HorizontalAlignment="Center"/>
+            <DockPanel>
+                <RepeatButton Name="DelayInc" Content="+" Click="DelayInc_Click"   DockPanel.Dock="Right" Width="20"></RepeatButton>
+                <RepeatButton Name ="DelayDec"  Content="-" Click="DelayDec_Click" Width="20" ></RepeatButton>
+                <TextBox Name="DelayCyclesTextbox" PreviewTextInput="DelayCyclesTextbox_PreviewTextInput" TextAlignment="Center" Text="1" TextChanged="DelayCyclesTextbox_TextChanged"/>
+            </DockPanel>
+            <Label Content="Run game" HorizontalAlignment="Center"/>
+            <DockPanel Margin="0,5,0,0">
+                <Button Width="40" Height="40" DockPanel.Dock="Right" Click="StartPauseButtonClick">
+                    <Grid>
+                        <Grid Name="StartIcon">
+                            <Polygon Points="0,0 20,15 0,30" Canvas.Left="0">
+                                <Polygon.Fill>
+                                    <SolidColorBrush Color="#FF43C336"/>
+                                </Polygon.Fill>
+                            </Polygon>
+                        </Grid>
+                        <Grid Name="PauseIcon" Opacity="0">
+                            <Rectangle Width="8" Height="25" Fill="#FFF5C31A" HorizontalAlignment="Left"/>
+                            <Rectangle Width="8" Height="25" Fill="#FFF5C31A" HorizontalAlignment="Right"/>
+                        </Grid>
+                    </Grid>
+                </Button>
+                <TextBox Name="CyclesInput" FontSize="16" TextAlignment="Center" VerticalContentAlignment="Center" 
+                         PreviewTextInput="CyclesInput_PreviewTextInput"  />                               
+            </DockPanel>
+        </StackPanel>
+
+
+    </Grid>
+</Window>
