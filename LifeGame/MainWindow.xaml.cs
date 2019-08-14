@@ -28,8 +28,7 @@ namespace LifeGame
         GraphicsController GC;
         Timer ScrollTimer;
         AutoResetEvent autoResetEvent;
-
-
+        InfoWindow InfoWindow;
 
         public MainWindow()
         {
@@ -42,39 +41,54 @@ namespace LifeGame
 
         private void Grid_SizeChanged(object sender, SizeChangedEventArgs e)
         {
+            GameControllerCreateOrUpdate(Game);
+        }
+
+        private void GameControllerCreateOrUpdate(Life game)
+        {
             int width = (int)GridMain.ColumnDefinitions[1].ActualWidth;
             int height = (int)GridMain.RowDefinitions[1].ActualHeight;
             if (GC == null)
             {
-                GC = new GraphicsController(GameField, Game, new Size(width, height), 4);
+                GC = new GraphicsController(GameField, game, new Size(width, height), 1);
                 ZoomValue.Text = GC.Scale.ToString();
             }
             else GC.Size = (width, height);
             UpdateUIGameFieldPosition();
         }
 
-
         private void OnCancelCommand(object sender, DataObjectEventArgs e)
         {
             e.CancelCommand();
-        }       
+        }
 
 
         //
         #region Game Field UI Events
 
-        (int x, int y) lastCoords = (-1, -1);
+        (int x, int y) _lastCell = (-1, -1);
+        public (int x, int y) lastCell {
+            get { return _lastCell; }
+            set
+            {
+                if (value == (-1, -1))
+                    _ = 1;
+                _lastCell = value;
+            }
+        }
         DateTime lastRedraw;
         Point startDragPoint;
         (int x, int y) changes;
-        private void FlipPixelIfCoordsChanged((int x, int y) coords)
+
+        private void PaintPixelIfCoordsChanged((int x, int y) coords, bool setAsAlive)
         {
-            if (lastCoords != coords)
-            {
-                lastCoords = coords;
-                GC.UpdatePixel(coords.x, coords.y);
+            if (lastCell != coords)
+            {                
+                lastCell = coords;
+                GC.PaintPixel(coords.x, coords.y, setAsAlive);
             }
         }
+
         private void GameField_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Left)
@@ -83,7 +97,14 @@ namespace LifeGame
                 var cell = GC.ToCell(e.GetPosition(GameField).X,
                     e.GetPosition(GameField).Y,
                     s.ActualWidth, s.ActualHeight);
-                FlipPixelIfCoordsChanged(cell);
+                PaintPixelIfCoordsChanged(cell, true);
+            }
+            else if (e.ChangedButton == MouseButton.Right) {
+                var s = sender as Image;
+                var cell = GC.ToCell(e.GetPosition(GameField).X,
+                    e.GetPosition(GameField).Y,
+                    s.ActualWidth, s.ActualHeight);
+                PaintPixelIfCoordsChanged(cell, false);
             }
             else if (e.ChangedButton == MouseButton.Middle)
             {
@@ -99,17 +120,33 @@ namespace LifeGame
 
         private void GameField_MouseMove(object sender, MouseEventArgs e)
         {
-            if (e.MouseDevice.LeftButton == MouseButtonState.Pressed && lastCoords != (-1, -1))
+            DEBUG.Text = $"{lastCell.x} {lastCell.y}";
+            if (lastCell != (-1, -1))
             {
-                var s = sender as Image;
-                var cell = GC.ToCell(e.GetPosition(GameField).X,
-                    e.GetPosition(GameField).Y,
-                    s.ActualWidth, s.ActualHeight);
-                FlipPixelIfCoordsChanged(cell);
-            }
+                if (e.MouseDevice.LeftButton == MouseButtonState.Pressed && e.MouseDevice.RightButton == MouseButtonState.Pressed)
+                {
+                    lastCell = (-1, -1);
+                }
+                else if (e.MouseDevice.LeftButton == MouseButtonState.Pressed)
+                {
+                    var s = sender as Image;
+                    var cell = GC.ToCell(e.GetPosition(GameField).X,
+                        e.GetPosition(GameField).Y,
+                        s.ActualWidth, s.ActualHeight);
+                    PaintPixelIfCoordsChanged(cell, true);
+                }
+                else if (e.MouseDevice.RightButton == MouseButtonState.Pressed)
+                {
+                    var s = sender as Image;
+                    var cell = GC.ToCell(e.GetPosition(GameField).X,
+                        e.GetPosition(GameField).Y,
+                        s.ActualWidth, s.ActualHeight);
+                    PaintPixelIfCoordsChanged(cell, false);
+                }
+            }            
             else if (e.MouseDevice.MiddleButton == MouseButtonState.Pressed)
             {
-                if ((DateTime.Now - lastRedraw).Milliseconds > 10)
+                if ((DateTime.Now - lastRedraw).Milliseconds > 2)
                 {
                     lastRedraw = DateTime.Now;
 
@@ -135,16 +172,16 @@ namespace LifeGame
         }
         private void GameField_MouseLeave(object sender, MouseEventArgs e)
         {
-            lastCoords = (-1, -1);
+            lastCell = (-1, -1);
             DragMarkerIcon.Opacity = 0;
             ScrollTimer?.Dispose();
-            ScrollTimer = null;
+            ScrollTimer = null;   
         }
         private void GameField_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left)
+            if (e.ChangedButton == MouseButton.Left || e.ChangedButton == MouseButton.Right)
             {
-                lastCoords = (-1, -1);
+                lastCell = (-1, -1);
             }
             else if (e.ChangedButton == MouseButton.Middle)
             {
@@ -153,6 +190,12 @@ namespace LifeGame
                 ScrollTimer = null;
             }
         }
+        private void GameField_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            DragMarkerCanvas.Height = GameField.ActualHeight;
+            DragMarkerCanvas.Width = GameField.ActualWidth;
+        }
+
         #endregion
 
 
@@ -207,35 +250,34 @@ namespace LifeGame
         }
         private void GameField_MouseWheel(object sender, MouseWheelEventArgs e)
         {
-            GC.Scale += e.Delta / 120;
-            ZoomValue.Text = GC.Scale.ToString();
+            UpdateScale(GC.Scale + e.Delta / 120);
         }
         private void ZoomValueUpdateScale()
         {
             try
             {
                 var value = int.Parse(ZoomValue.Text);
+                UpdateScale(value);
                 if (value != GC.Scale) GC.Scale = value;
             }
             catch (Exception)
             {
             }
-            finally
-            {
-                ZoomValue.Text = GC.Scale.ToString();
-            }
         }
         private void IncZoom_Click(object sender, RoutedEventArgs e)
         {
-            GC.Scale += 1;
-            ZoomValue.Text = GC.Scale.ToString();
+            UpdateScale(GC.Scale + 1);
         }
         private void DecZoom_Click(object sender, RoutedEventArgs e)
         {
-            GC.Scale -= 1;
-            ZoomValue.Text = GC.Scale.ToString();
+            UpdateScale(GC.Scale - 1);
         }
 
+        private void UpdateScale (int value)
+        {
+            GC.Scale = value;
+            ZoomValue.Text = GC.Scale.ToString();
+        }
         #endregion
 
 
@@ -388,8 +430,50 @@ namespace LifeGame
         }
 
 
+
         #endregion
 
-        
+
+
+        public void SetupNewGame(int width, int height, bool wrap)
+        {
+            Game = new Life(width, height, wrap);
+            GC = null;
+            GameControllerCreateOrUpdate(Game);
+        }
+
+
+        #region Menu
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            
+        }
+
+        private void MenuItem_Reset_Click(object sender, RoutedEventArgs e)
+        {
+            Game = new Life(Game.Width, Game.Height, Game.Wrapping);
+            GC = null;
+            GameControllerCreateOrUpdate(Game);
+        }
+
+        private void MenuItem_New_Click(object sender, RoutedEventArgs e)
+        {
+            new CreateNewGame().Show();
+        }
+
+        private void MenuItem_Exit_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
+        }
+
+        private void MenuItem_Click_1(object sender, RoutedEventArgs e)
+        {
+            if (InfoWindow == null) InfoWindow = new InfoWindow();
+            else if (!InfoWindow.IsLoaded) InfoWindow = new InfoWindow();
+
+            if (InfoWindow.IsLoaded) InfoWindow.Activate();
+            else InfoWindow.Show();
+        }
+        #endregion
     }
 }

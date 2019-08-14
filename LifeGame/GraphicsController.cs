@@ -147,6 +147,14 @@ namespace LifeGame
             Game.Flip(this.x + x, this.y + y);
         }
 
+        public void PaintPixel(int x, int y, bool paintAsAlive)
+        {
+            x += this.x;
+            y += this.y;
+            if (Game.Get(x, y) != paintAsAlive) Game.Flip(x, y);
+        }
+
+
         public GraphicsController(Image destination, Life game, Size size, int scale = 1)
         {
             Game = game;

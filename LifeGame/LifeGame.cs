@@ -11,7 +11,9 @@ namespace LifeGame
     public class Life
     {
         readonly bool[][] field;
-        readonly bool Wrapping;
+
+
+        public readonly bool Wrapping;
 
         public bool Get(int x, int y)
         {           
